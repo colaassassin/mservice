@@ -1,0 +1,54 @@
+server:
+  port: 10202
+spring:
+  application:
+    name: sso-gateway
+  main:
+    allow-bean-definition-overriding: true
+  redis:
+    database: 0
+    port: 6379
+    host: 127.0.0.1
+    password: 123456
+  cloud:
+    gateway:
+      routes:
+        - id: oauth2-reg-route
+          uri: lb://sso-ssoReg
+          predicates:
+            - Path=/reg/**
+          filters:
+            - StripPrefix=1
+        - id: oauth2-api-route
+          uri: lb://sso-ssoapi
+          predicates:
+            - Path=/api/**
+          filters:
+            - StripPrefix=1
+      discovery:
+        locator:
+          enabled: true  #开启从注册中心动态创建路由的功能
+          lower-case-service-id: true #服务器名启动小写
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: 'http://localhost:10101/rsa/publicKey'
+secure:
+  ignore:
+    urls: #配置白名单路径
+      - "/actuator/**"
+      - "/reg/oauth/token"
+eureka:
+  instance:
+    lease-expiration-duration-in-seconds: 30
+    lease-renewal-interval-in-seconds: 30
+    prefer-ip-address: true
+    ip-address: localhost
+    instance-id: ${eureka.instance.ip-address}:${spring.application.name}:${server.port}
+  client:
+    fetch-registry: true
+    register-with-eureka: true
+    service-url:
+      defaultZone: http://localhost:10010/eureka/
+    enabled: true
