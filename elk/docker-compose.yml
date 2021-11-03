@@ -1,0 +1,59 @@
+version: "3"
+services:
+  elasticsearch:
+    image: elasticsearch:7.2.0
+    container_name: elasticsearch
+    restart: always
+    privileged: true
+    environment:
+#      discovery.type: single-node
+      ELASTIC_PASSWORD: deludesu
+      ES_JAVA_OPTS: "-Xms1024m -Xmx1024m"
+    volumes:
+      - /usr/local/docker/elk/elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+      - /usr/local/docker/elk/elasticsearch/data:/usr/share/elasticsearch/data
+      - /usr/local/docker/elk/elasticsearch/plugins:/usr/share/elasticsearch/plugins
+    ports:
+      - 9200:9200
+      - 9300:9300
+    networks:
+      elk:
+        ipv4_address: 172.30.1.111
+  logstash:
+    image: logstash:7.2.0
+    container_name: logstash
+    restart: always
+    privileged: true
+    environment:
+#      discovery.type: single-node
+      ES_JAVA_OPTS: "-Xmx256m -Xms256m"
+    volumes:
+      - /usr/local/docker/elk/logstash/pipeline:/usr/share/logstash/pipeline
+      - /usr/local/docker/elk/logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml
+    depends_on:
+      - elasticsearch
+    ports:
+      - 5044:5044
+    networks:
+      elk:
+        ipv4_address: 172.30.1.112
+  kibana:
+    image: kibana:7.2.0
+    container_name: kibana
+    restart: always
+    privileged: true
+    environment:
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+    volumes:
+      - /usr/local/docker/elk/kibana/config/kibana.yml:/usr/share/kibana/config/kibana.yml
+    depends_on:
+      - elasticsearch
+    ports:
+      - 5601:5601
+    networks:
+      elk:
+        ipv4_address: 172.30.1.113
+networks:
+  elk:
+    external:
+      name: mynet
